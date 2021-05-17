@@ -636,6 +636,11 @@ static bool btrfs_sb_equal(struct mount_info *a, struct mount_info *b)
 	return true;
 }
 
+static int dump_no_fs(struct mount_info *pm)
+{
+	return 0;
+}
+
 static int dump_empty_fs(struct mount_info *pm)
 {
 	int fd, ret = -1;
@@ -723,7 +728,7 @@ static struct fstype fstypes[] = {
 	},
 	{
 		.name = "mqueue",
-		.dump = dump_empty_fs,
+		.dump = dump_no_fs,
 		.code = FSTYPE__MQUEUE,
 	},
 	{
