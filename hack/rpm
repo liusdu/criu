@@ -33,7 +33,7 @@ RUN echo '%_topdir /root/rpmbuild' > /root/.rpmmacros \
                   && echo '%debug_package %{nil}' >> /root/.rpmmacros
 WORKDIR /root/rpmbuild/SPECS
 
-RUN yum install  -y gnutls-devel libbsd-devel asciidoc xmlto
+RUN yum install  -y gnutls-devel libbsd-devel asciidoc xmlto python-devel
 
 RUN rpmbuild -bb \
   --define 'version ${RPM_VERSION}' \
