@@ -84,7 +84,7 @@ static int dump_pages(struct parasite_dump_pages_args *args)
 	if (nr_segs > UIO_MAXIOV)
 		nr_segs = UIO_MAXIOV;
 	while (1) {
-		ret = sys_vmsplice(p, &iovs[args->off + off], nr_segs, SPLICE_F_GIFT | SPLICE_F_NONBLOCK);
+		ret = sys_vmsplice(p, &iovs[args->off + off], nr_segs, SPLICE_F_GIFT);
 		if (ret < 0) {
 			sys_close(p);
 			pr_err("Can't splice pages to pipe (%d/%d/%d)\n", ret, nr_segs, args->off + off);
