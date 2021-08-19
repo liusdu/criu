@@ -351,7 +351,10 @@ tar-name := $(shell echo $(head-name) | sed -e 's/^v//g')
 criu-$(tar-name).tar.bz2:
 	git archive --format tar --prefix 'criu-$(tar-name)/' $(head-name) | bzip2 > $@
 dist tar: criu-$(tar-name).tar.bz2 ;
-.PHONY: dist tar
+.PHONY: dist tar rpm
+
+rpm:
+	./hack/rpm $(tar-name)
 
 TAGS_FILES_REGEXP := . -name '*.[hcS]' ! -path './.*' \( ! -path './test/*' -o -path './test/zdtm/lib/*' \)
 tags:
