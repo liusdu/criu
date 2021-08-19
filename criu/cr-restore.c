@@ -1724,6 +1724,11 @@ static int create_children_and_session(void)
 	return 0;
 }
 
+pid_t getpid(void)
+{
+       return syscall(__NR_getpid);
+}
+
 static int restore_task_with_children(void *_arg)
 {
 	struct cr_clone_arg *ca = _arg;
