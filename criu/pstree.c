@@ -306,6 +306,11 @@ int dump_pstree(struct pstree_item *root_item)
 
 	for_each_pstree_item(item) {
 		pr_info("Process: %d(%d)\n", vpid(item), item->pid->real);
+		if (item->pid->state == TASK_DEAD && item->sid == 0) {
+			pr_info("Process %d(%d) is zombie and has a session leader in outer pidns, skipping\n",
+				vpid(item), item->pid->real);
+			continue;
+		}
 
 		e.pid = vpid(item);
 		e.ppid = item->parent ? vpid(item->parent) : 0;

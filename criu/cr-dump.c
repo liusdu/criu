@@ -1129,6 +1129,16 @@ static int dump_zombies(void)
 		item->pgid = pps_buf.pgid;
 
 		BUG_ON(!list_empty(&item->children));
+
+		// A zombie process with 0 sid has a session leader in
+		// outer pidns and has ignored SIGHUP. So there is no
+		// process in this pid ns to wait on it. So no need to
+		// dump it.
+		if (!item->sid) {
+			pr_info("no need to dump: %d\n", vpid(item));
+			continue;
+		}
+
 		if (dump_one_zombie(item, &pps_buf) < 0)
 			goto err;
 	}
