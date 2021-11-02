@@ -160,12 +160,12 @@ GITID		:= $(shell if [ -d ".git" ]; then git describe --always; fi)
 
 # Git repository wasn't inited in CRIU folder
 ifeq ($(GITID),)
-        GITID := 0
-else
-        GITID_FILE_VALUE := $(shell if [ -f '$(GITID_FILE)' ]; then if [ `cat '$(GITID_FILE)'` = $(GITID) ]; then echo y; fi; fi)
-        ifneq ($(GITID_FILE_VALUE),y)
-                .PHONY: $(GITID_FILE)
-        endif
+        GITID := ${COMMIT}
+endif
+
+GITID_FILE_VALUE := $(shell if [ -f '$(GITID_FILE)' ]; then if [ `cat '$(GITID_FILE)'` = $(GITID) ]; then echo y; fi; fi)
+ifneq ($(GITID_FILE_VALUE),y)
+       .PHONY: $(GITID_FILE)
 endif
 
 $(GITID_FILE):

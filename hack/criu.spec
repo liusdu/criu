@@ -115,7 +115,7 @@ their content in human-readable form.
 
 # %{?_smp_mflags} does not work
 # -fstack-protector breaks build
-CFLAGS+=`echo %{optflags} | sed -e 's,-fstack-protector\S*,,g'` make V=1 WERROR=0 PREFIX=%{_prefix} RUNDIR=/run/criu PYTHON=%{py_binary}
+CFLAGS+=`echo %{optflags} | sed -e 's,-fstack-protector\S*,,g'` make V=1 WERROR=0 PREFIX=%{_prefix} COMMIT=%{commit} RUNDIR=/run/criu PYTHON=%{py_binary}
 %if 0%{?fedora} || 0%{?rhel} > 7
 make docs V=1
 %endif
@@ -151,7 +151,7 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libcriu.a
 
 %files
 %{_sbindir}/%{name}
-%{_sbindir}/%{name}-ns
+#%{_sbindir}/%{name}-ns
 %doc %{_mandir}/man8/criu.8*
 %doc %{_mandir}/man1/compel.1*
 %if 0%{?fedora}
