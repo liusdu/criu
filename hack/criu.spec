@@ -43,7 +43,7 @@ BuildRequires: asciidoc xmlto
 BuildRequires: perl-interpreter
 BuildRequires: libselinux-devel
 BuildRequires: gnutls-devel
-BuildRequires: nftables-devel
+#BuildRequires: nftables-devel
 # Checkpointing containers with a tmpfs requires tar
 Recommends: tar
 %if 0%{?fedora}
@@ -122,8 +122,8 @@ make docs V=1
 
 
 %install
-make install-criu DESTDIR=$RPM_BUILD_ROOT PREFIX=%{_prefix} LIBDIR=%{_libdir}
-make install-lib DESTDIR=$RPM_BUILD_ROOT PREFIX=%{_prefix} LIBDIR=%{_libdir} PYTHON=%{py_binary}
+make install-criu DESTDIR=$RPM_BUILD_ROOT COMMIT=%{commit} PREFIX=%{_prefix} LIBDIR=%{_libdir}
+make install-lib DESTDIR=$RPM_BUILD_ROOT COMMIT=%{commit} PREFIX=%{_prefix} LIBDIR=%{_libdir} PYTHON=%{py_binary}
 %if 0%{?fedora} || 0%{?rhel} > 7
 # only install documentation on Fedora as it requires asciidoc,
 # which is not available on RHEL7
@@ -151,7 +151,10 @@ rm -f $RPM_BUILD_ROOT%{_libdir}/libcriu.a
 
 %files
 %{_sbindir}/%{name}
-#%{_sbindir}/%{name}-ns
+%if 0%{?fedora} || 0%{?rhel} > 7
+%{_sbindir}/%{name}-ns
+%doc %{_mandir}/man1/criu-ns.1*
+%endif
 %doc %{_mandir}/man8/criu.8*
 %doc %{_mandir}/man1/compel.1*
 %if 0%{?fedora}

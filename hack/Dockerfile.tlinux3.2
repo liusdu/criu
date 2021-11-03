@@ -1,4 +1,5 @@
-FROM centos:7
+FROM mirrors.tencent.com/tlinux/tlinux3.2_mini_gcc_9.3.0:v20210914
+#FROM centos:8
 
 ARG CC=gcc
 
@@ -14,26 +15,20 @@ RUN yum install -y \
 	libcap-devel \
 	libnet-devel \
 	libnl3-devel \
+	libselinux-devel \
 	make \
-	libbsd-devel \
 	procps-ng \
 	protobuf-c-devel \
 	protobuf-devel \
-	protobuf-python \
-	python \
-	 python-devel \
-	python-flake8 \
-	python-ipaddress \
-	python2-future \
-	python2-junit_xml \
-	python-yaml \
-	python-six \
+	protobuf-python3 \
+	python3 \
+	python3-netaddr \
+	python3-devel \
 	sudo \
 	tar \
 	which \
 	e2fsprogs \
-	python2-pip \
-	rubygem-asciidoctor \
+	python3-pip \
 	rpm-build  && \
 	mkdir -p /root/rpmbuild/SPECS && \
 	mkdir -p /root/rpmbuild/SOURCES

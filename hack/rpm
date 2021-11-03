@@ -20,10 +20,13 @@ git archive -o ${OUTPUT_PATH}/criu.tar.gz \
   --prefix=criu-${RPM_VERSION}/ \
   HEAD
 
-cp ${BASE_DIR}/hack/Dockerfile ${OUTPUT_PATH}
-cp ${BASE_DIR}/hack/criu.spec ${OUTPUT_PATH}
 
-cat >>${OUTPUT_PATH}/Dockerfile <<EOF
+for file in `ls ${BASE_DIR}/hack/Dockerfile*`
+do
+	cp $file ${OUTPUT_PATH}/Dockerfile
+	cp ${BASE_DIR}/hack/criu.spec ${OUTPUT_PATH}
+
+	cat >>${OUTPUT_PATH}/Dockerfile <<EOF
 
 RUN mkdir -p /root/rpmbuild/SPECS
 COPY criu.spec /root/rpmbuild/SPECS
@@ -33,7 +36,7 @@ RUN echo '%_topdir /root/rpmbuild' > /root/.rpmmacros \
                   && echo '%debug_package %{nil}' >> /root/.rpmmacros
 WORKDIR /root/rpmbuild/SPECS
 
-RUN yum install  -y gnutls-devel libbsd-devel asciidoc xmlto python-devel
+RUN yum install  -y gnutls-devel asciidoc xmlto
 
 RUN rpmbuild -bb \
   --define 'version ${RPM_VERSION}' \
@@ -42,5 +45,6 @@ RUN rpmbuild -bb \
   criu.spec
 EOF
 
-(cd "${OUTPUT_PATH}" && docker build --network=host -t "$RPM_IMAGE" .)
-docker run --rm "$RPM_IMAGE" bash -c 'cd /root/rpmbuild && tar -c *RPMS' | tar xvC "${OUTPUT_PATH}"
+	(cd "${OUTPUT_PATH}" && docker build --network=host -t "$RPM_IMAGE" .)
+	docker run --rm "$RPM_IMAGE" bash -c 'cd /root/rpmbuild && tar -c *RPMS' | tar xvC "${OUTPUT_PATH}"
+done
