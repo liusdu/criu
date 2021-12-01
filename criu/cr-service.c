@@ -241,7 +241,7 @@ int send_criu_rpc_script(enum script_actions act, char *name, int sk, int fd)
 
 static char images_dir[PATH_MAX];
 
-static int setup_opts_from_req(int sk, CriuOpts *req)
+static int setup_opts_from_req(int sk, CriuOpts *req, int mode)
 {
 	struct ucred ids;
 	struct stat st;
@@ -343,7 +343,8 @@ static int setup_opts_from_req(int sk, CriuOpts *req)
 
 	if (req->parent_img)
 		SET_CHAR_OPTS(img_parent, req->parent_img);
-
+	if (opts.stream)
+		pr_info("using stream mode\n");
 	/*
 	 * Image streaming is not supported with CRIU's service feature as
 	 * the streamer must be started for each dump/restore operation.
@@ -351,7 +352,7 @@ static int setup_opts_from_req(int sk, CriuOpts *req)
 	 * This explains why we provide the argument mode=-1 instead of
 	 * O_RSTR or O_DUMP.
 	 */
-	if (open_image_dir(images_dir_path, -1) < 0) {
+	if (open_image_dir(images_dir_path, opts.stream ? mode : -1) < 0) {
 		pr_perror("Can't open images directory");
 		goto err;
 	}
@@ -735,7 +736,7 @@ static int dump_using_req(int sk, CriuOpts *req)
 	bool success = false;
 	bool self_dump = !req->pid;
 
-	if (setup_opts_from_req(sk, req))
+	if (setup_opts_from_req(sk, req, O_DUMP))
 		goto exit;
 
 	setproctitle("dump --rpc -t %d -D %s", req->pid, images_dir);
@@ -777,7 +778,7 @@ static int restore_using_req(int sk, CriuOpts *req)
 
 	opts.restore_detach = true;
 
-	if (setup_opts_from_req(sk, req))
+	if (setup_opts_from_req(sk, req, O_RSTR))
 		goto exit;
 
 	setproctitle("restore --rpc -D %s", images_dir);
@@ -828,7 +829,7 @@ static int check(int sk, CriuOpts *req)
 	if (pid == 0) {
 		setproctitle("check --rpc");
 
-		if (setup_opts_from_req(sk, req))
+		if (setup_opts_from_req(sk, req, -1))
 			exit(1);
 
 		exit(!!cr_check());
@@ -859,7 +860,7 @@ static int pre_dump_using_req(int sk, CriuOpts *req)
 	if (pid == 0) {
 		int ret = 1;
 
-		if (setup_opts_from_req(sk, req))
+		if (setup_opts_from_req(sk, req, -1))
 			goto cout;
 
 		setproctitle("pre-dump --rpc -t %d -D %s", req->pid, images_dir);
@@ -936,7 +937,7 @@ static int start_page_server_req(int sk, CriuOpts *req, bool daemon_mode)
 	if (pid == 0) {
 		close(start_pipe[0]);
 
-		if (setup_opts_from_req(sk, req))
+		if (setup_opts_from_req(sk, req, -1))
 			goto out_ch;
 
 		setproctitle("page-server --rpc --address %s --port %hu", opts.addr, opts.port);
@@ -1182,7 +1183,7 @@ static int handle_cpuinfo(int sk, CriuReq *msg)
 	if (pid == 0) {
 		int ret = 1;
 
-		if (setup_opts_from_req(sk, msg->opts))
+		if (setup_opts_from_req(sk, msg->opts, -1))
 			goto cout;
 
 		setproctitle("cpuinfo %s --rpc -D %s", msg->type == CRIU_REQ_TYPE__CPUINFO_DUMP ? "dump" : "check",
