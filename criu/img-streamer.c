@@ -52,6 +52,7 @@ int img_streamer_init(const char *image_dir, int mode)
 	int sockfd;
 
 	img_streamer_mode = mode;
+	pr_info("init mode: %x\n", mode);
 
 	sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
 	if (sockfd < 0) {
@@ -222,7 +223,6 @@ static int _img_streamer_open(char *filename)
 int img_streamer_open(char *filename, int flags)
 {
 	int ret;
-
 	BUG_ON(flags != img_streamer_mode);
 
 	mutex_lock(img_streamer_fd_lock);
