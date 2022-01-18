@@ -11,6 +11,7 @@
 #include "pipes.h"
 #include "util-pie.h"
 #include "autofs.h"
+#include "cr_options.h"
 
 #include "protobuf.h"
 #include "util.h"
@@ -20,6 +21,10 @@
 #include "namespaces.h"
 
 static LIST_HEAD(pipes);
+
+static struct pipe_data_dump pd_pipes = {
+	.img_type = CR_FD_PIPES_DATA,
+};
 
 static void show_saved_pipe_fds(struct pipe_info *pi)
 {
@@ -281,6 +286,21 @@ static char *pipe_d_name(struct file_desc *d, char *buf, size_t s)
 	return buf;
 }
 
+int init_pipe_dump()
+{
+	if (!opts.max_pipe_num)
+		opts.max_pipe_num = NR_PIPES_WITH_DATA;
+
+	pd_pipes.ids = (u32 *)malloc(sizeof(u32) * opts.max_pipe_num);
+	if (pd_pipes.ids == NULL) {
+		pr_perror("failed to initailized pipe dump");
+		return -1;
+	}
+
+	pr_info("supported max pipe num is %d\n", opts.max_pipe_num);
+	return 0;
+}
+
 int open_pipe(struct file_desc *d, int *new_fd)
 {
 	struct pipe_info *pi, *p;
@@ -412,7 +432,7 @@ int dump_one_pipe_data(struct pipe_data_dump *pd, int lfd, const struct fd_parms
 
 	pr_info("Dumping data from pipe %#x fd %d\n", pipe_id(p), lfd);
 
-	if (pd->nr >= NR_PIPES_WITH_DATA) {
+	if (pd->nr >= opts.max_pipe_num) {
 		pr_err("OOM storing pipe\n");
 		return -1;
 	}
@@ -474,10 +494,6 @@ err_close:
 err:
 	return ret;
 }
-
-static struct pipe_data_dump pd_pipes = {
-	.img_type = CR_FD_PIPES_DATA,
-};
 
 static int dump_one_pipe(int lfd, u32 id, const struct fd_parms *p)
 {

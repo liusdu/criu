@@ -41,6 +41,7 @@
 #include "ptrace-compat.h"
 #include "util.h"
 #include "namespaces.h"
+#include "pipes.h"
 #include "image.h"
 #include "proc_parse.h"
 #include "parasite.h"
@@ -1838,6 +1839,9 @@ int cr_dump_tasks(pid_t pid)
 		goto err;
 
 	if (cpu_init())
+		goto err;
+
+	if (init_pipe_dump())
 		goto err;
 
 	if (vdso_init_dump())
