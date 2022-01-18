@@ -358,6 +358,7 @@ usage:
 	       "                        in lazy-pages mode: 'criu lazy-pages -D DIR'\n"
 	       "                        --lazy-pages and lazy-pages mode require userfaultfd\n"
 	       "  --stream              dump/restore images using criu-image-streamer\n"
+	       "  --max-pipe-num	max num of pipe with data"
 	       "  --network-lock METHOD\n"
 	       "                      network locking/unlocking method; argument\n"
 	       "                      can be 'nftables' or 'iptables' (default).\n"

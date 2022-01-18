@@ -13,12 +13,12 @@ static inline u32 pipe_id(const struct fd_parms *p)
 	return p->stat.st_ino;
 }
 
-#define NR_PIPES_WITH_DATA 1024
+#define NR_PIPES_WITH_DATA 10240
 
 struct pipe_data_dump {
 	int img_type;
 	unsigned int nr;
-	u32 ids[NR_PIPES_WITH_DATA];
+	u32 *ids;
 };
 
 extern int dump_one_pipe_data(struct pipe_data_dump *pd, int lfd, const struct fd_parms *p);
@@ -57,5 +57,6 @@ struct pipe_info {
 
 extern int collect_one_pipe_ops(void *o, ProtobufCMessage *base, struct file_desc_ops *ops);
 extern int open_pipe(struct file_desc *d, int *new_fd);
+extern int init_pipe_dump(void);
 
 #endif /* __CR_PIPES_H__ */
