@@ -52,7 +52,7 @@ struct page_read {
 	int (*sync)(struct page_read *pr);
 	int (*seek_pagemap)(struct page_read *pr, unsigned long vaddr);
 	void (*reset)(struct page_read *pr);
-	int (*io_complete)(struct page_read *, unsigned long vaddr, int nr);
+	int (*io_complete)(struct page_read *, unsigned long vaddr, int *nr);
 	int (*maybe_read_page)(struct page_read *pr, unsigned long vaddr, int nr, void *buf, unsigned flags);
 
 	/* Whether or not pages can be read in PIE code */

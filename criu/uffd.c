@@ -728,7 +728,7 @@ free_mm:
 	return ret;
 }
 
-static int uffd_io_complete(struct page_read *pr, unsigned long vaddr, int nr);
+static int uffd_io_complete(struct page_read *pr, unsigned long vaddr, int *nr);
 
 static int ud_open(int client, struct lazy_pages_info **_lpi)
 {
@@ -865,7 +865,7 @@ static int uffd_copy(struct lazy_pages_info *lpi, __u64 address, int *nr_pages)
 	return 0;
 }
 
-static int uffd_io_complete(struct page_read *pr, unsigned long img_addr, int nr)
+static int uffd_io_complete(struct page_read *pr, unsigned long img_addr, int *nr)
 {
 	struct lazy_pages_info *lpi;
 	unsigned long addr = 0;
@@ -901,9 +901,9 @@ static int uffd_io_complete(struct page_read *pr, unsigned long img_addr, int nr
 	 * we should.
 	 */
 	req_pages = (req->end - req->start) / PAGE_SIZE;
-	nr = min(nr, req_pages);
+	*nr = min(*nr, req_pages);
 
-	ret = uffd_copy(lpi, addr, &nr);
+	ret = uffd_copy(lpi, addr, nr);
 	if (ret < 0)
 		return ret;
 
@@ -917,7 +917,7 @@ static int uffd_io_complete(struct page_read *pr, unsigned long img_addr, int nr
 	 * list and let drop_iovs do the range math, free memory etc.
 	 */
 	iov_list_insert(req, &lpi->iovs);
-	return drop_iovs(lpi, addr, nr * PAGE_SIZE);
+	return drop_iovs(lpi, addr, *nr * PAGE_SIZE);
 }
 
 static int uffd_zero(struct lazy_pages_info *lpi, __u64 address, int nr_pages)
@@ -974,7 +974,6 @@ static int uffd_handle_pages(struct lazy_pages_info *lpi, __u64 address, int nr,
 		lp_err(lpi, "failed reading pages at %llx\n", address);
 		return ret;
 	}
-
 	return 0;
 }
 
