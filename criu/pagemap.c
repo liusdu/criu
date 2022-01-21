@@ -261,12 +261,6 @@ static int read_local_page(struct page_read *pr, unsigned long vaddr, unsigned l
 			break;
 	}
 
-	if (opts.auto_dedup) {
-		ret = punch_hole(pr, pr->pi_off, len, false);
-		if (ret == -1)
-			return -1;
-	}
-
 	return 0;
 }
 
@@ -390,7 +384,13 @@ static int maybe_read_page_local(struct page_read *pr, unsigned long vaddr, int 
 	else {
 		ret = read_local_page(pr, vaddr, len, buf);
 		if (ret == 0 && pr->io_complete)
-			ret = pr->io_complete(pr, vaddr, nr);
+			ret = pr->io_complete(pr, vaddr, &nr);
+
+		if (ret == 0 && opts.auto_dedup) {
+			ret = punch_hole(pr, pr->pi_off, nr * PAGE_SIZE, false);
+			if (ret == -1)
+				return -1;
+		}
 	}
 
 	pr->pi_off += len;
@@ -438,7 +438,7 @@ static int maybe_read_page_img_streamer(struct page_read *pr, unsigned long vadd
 		pr_warn_once("Can't dedup when streaming images\n");
 
 	if (pr->io_complete)
-		ret = pr->io_complete(pr, vaddr, nr);
+		ret = pr->io_complete(pr, vaddr, &nr);
 
 	pr->pi_off += len;
 
@@ -456,7 +456,7 @@ static int read_page_complete(unsigned long img_id, unsigned long vaddr, int nr_
 	}
 
 	if (pr->io_complete)
-		ret = pr->io_complete(pr, vaddr, nr_pages);
+		ret = pr->io_complete(pr, vaddr, &nr_pages);
 	else
 		pr_warn_once("Remote page read w/o io_complete!\n");
 
