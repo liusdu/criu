@@ -28,15 +28,12 @@ do
 
 	cat >>${OUTPUT_PATH}/Dockerfile <<EOF
 
-RUN mkdir -p /root/rpmbuild/SPECS
 COPY criu.spec /root/rpmbuild/SPECS
 COPY criu.tar.gz /root/rpmbuild/SOURCES
 RUN echo '%_topdir /root/rpmbuild' > /root/.rpmmacros \
           && echo '%__os_install_post %{nil}' >> /root/.rpmmacros \
                   && echo '%debug_package %{nil}' >> /root/.rpmmacros
 WORKDIR /root/rpmbuild/SPECS
-
-RUN yum install  -y gnutls-devel asciidoc xmlto
 
 RUN rpmbuild -bb \
   --define 'version ${RPM_VERSION}' \

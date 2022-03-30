@@ -34,8 +34,12 @@ RUN yum install -y \
 	e2fsprogs \
 	python2-pip \
 	rubygem-asciidoctor \
-	rpm-build  && \
-	mkdir -p /root/rpmbuild/SPECS && \
+	rpm-build \
+	gnutls-devel \
+	asciidoc \
+	xmlto
+
+RUN mkdir -p /root/rpmbuild/SPECS && \
 	mkdir -p /root/rpmbuild/SOURCES
 
 
