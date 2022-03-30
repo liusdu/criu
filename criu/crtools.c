@@ -179,8 +179,8 @@ int main(int argc, char *argv[], char *envp[])
 		}
 	}
 
-	if (opts.stream && image_dir_mode(argv, optind) == -1) {
-		pr_err("--stream cannot be used with the %s command\n", argv[optind]);
+	if ((opts.stream || opts.pre_dump_stream) && image_dir_mode(argv, optind) == -1) {
+		pr_err("--stream or --pre-dump-stream cannot be used with the %s command\n", argv[optind]);
 		goto usage;
 	}
 
