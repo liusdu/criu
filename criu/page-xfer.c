@@ -1411,7 +1411,6 @@ no_server:
 		int count;
 
 		count = write(cfd, &info, sizeof(info));
-		close_safe(&cfd);
 		if (count != sizeof(info)) {
 			pr_perror("Unable to write ps_info");
 			exit(1);

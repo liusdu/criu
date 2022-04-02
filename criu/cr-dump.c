@@ -1690,10 +1690,20 @@ static int cr_lazy_mem_dump(void)
 {
 	struct pstree_item *item;
 	int ret = 0;
+	int fd;
+	char info_file[PATH_MAX];
 
 	pr_info("Starting lazy pages server\n");
-	ret = cr_page_server(false, true, -1);
-
+	// create lazy_pages_server_info file to notify caller the info of lazy pages server,
+	// note that we have already chdir to work_dir, so create file in current directory is ok.
+	fd = open("./lazy_pages_server_info", O_WRONLY | O_TRUNC | O_CREAT, 0600);
+	if (fd < 0) {
+		pr_perror("couldn't create %s", info_file);
+		ret = -1;
+		goto out;
+	}
+	ret = cr_page_server(false, true, fd);
+	close_safe(&fd);
 	for_each_pstree_item(item) {
 		if (item->pid->state != TASK_DEAD) {
 			destroy_page_pipe(dmpi(item)->mem_pp);
@@ -1702,6 +1712,7 @@ static int cr_lazy_mem_dump(void)
 		}
 	}
 
+out:
 	if (ret)
 		pr_err("Lazy pages transfer FAILED.\n");
 	else
