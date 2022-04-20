@@ -86,6 +86,7 @@ struct page_read {
 /* flags for ->read_pages */
 #define PR_ASYNC 0x1 /* may exit w/o data in the buffer */
 #define PR_ASAP	 0x2 /* PR_ASYNC, but start the IO right now */
+#define PR_DEDUP 0x4 /* only enable dedup, do not read pages to buf */
 
 /* flags for open_page_read */
 #define PR_SHMEM 0x1

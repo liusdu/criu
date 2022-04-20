@@ -180,6 +180,7 @@ static int read_parent_page(struct page_read *pr, unsigned long vaddr, int nr, v
 {
 	struct page_read *ppr = pr->parent;
 	int ret;
+	const char *msg = "Read";
 
 	if (!ppr) {
 		pr_err("No parent for snapshot pagemap\n");
@@ -197,9 +198,16 @@ static int read_parent_page(struct page_read *pr, unsigned long vaddr, int nr, v
 	do {
 		int p_nr;
 
-		pr_debug("\tpr%lu-%u Read from parent\n", pr->img_id, pr->id);
+		if ((flags & PR_DEDUP) == PR_DEDUP) {
+			msg = "Dedup";
+		}
+		pr_debug("\tpr%lu-%u %s from parent\n", pr->img_id, pr->id, msg);
 		ret = ppr->seek_pagemap(ppr, vaddr);
 		if (ret <= 0) {
+			if ((flags & PR_DEDUP) == PR_DEDUP) {
+				pr_debug("Missing %lx in parent pagemap\n", vaddr);
+				return 0;
+			}
 			pr_err("Missing %lx in parent pagemap\n", vaddr);
 			return -1;
 		}
@@ -370,7 +378,7 @@ int pagemap_enqueue_iovec(struct page_read *pr, void *buf, unsigned long len, st
 
 static int maybe_read_page_local(struct page_read *pr, unsigned long vaddr, int nr, void *buf, unsigned flags)
 {
-	int ret;
+	int ret = 0;
 	unsigned long len = nr * PAGE_SIZE;
 
 	/*
@@ -382,9 +390,11 @@ static int maybe_read_page_local(struct page_read *pr, unsigned long vaddr, int 
 	if ((flags & (PR_ASYNC | PR_ASAP)) == PR_ASYNC)
 		ret = pagemap_enqueue_iovec(pr, buf, len, &pr->async);
 	else {
-		ret = read_local_page(pr, vaddr, len, buf);
-		if (ret == 0 && pr->io_complete)
-			ret = pr->io_complete(pr, vaddr, &nr);
+		if ((flags & PR_DEDUP) != PR_DEDUP) {
+			ret = read_local_page(pr, vaddr, len, buf);
+			if (ret == 0 && pr->io_complete)
+				ret = pr->io_complete(pr, vaddr, &nr);
+		}
 
 		if (ret == 0 && opts.auto_dedup) {
 			ret = punch_hole(pr, pr->pi_off, nr * PAGE_SIZE, false);
@@ -471,6 +481,11 @@ static int maybe_read_page_remote(struct page_read *pr, unsigned long vaddr, int
 	ret = request_remote_pages(pr->img_id, vaddr, nr);
 	if (!ret)
 		ret = page_server_start_read(buf, nr, read_page_complete, pr, flags);
+	/* read page from remote means present page maybe exists in parent, we should dedup it */
+	if (ret == 0 && opts.auto_dedup && pr->parent != NULL) {
+		/* ignore error if we can not find page in parent pages */
+		read_parent_page(pr, vaddr, nr, buf, flags | PR_DEDUP);
+	}
 	return ret;
 }
 
