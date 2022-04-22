@@ -195,7 +195,7 @@ static int generate_iovs(struct pstree_item *item, struct vma_area *vma, struct 
 		 */
 
 		if (has_parent && page_in_parent(at[pfn] & PME_SOFT_DIRTY)) {
-			ret = page_pipe_add_hole(pp, vaddr, PP_HOLE_PARENT);
+			ret = page_pipe_add_hole(pp, vaddr, ppb_flags | PP_HOLE_PARENT);
 			st = 0;
 		} else {
 			ret = page_pipe_add_page(pp, vaddr, ppb_flags);
