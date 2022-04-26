@@ -684,6 +684,7 @@ int parse_options(int argc, char **argv, bool *usage_error, bool *has_exec_cmd, 
 		{ "verbosity", optional_argument, 0, 'v' },
 		{ "ps-socket", required_argument, 0, 1091 },
 		BOOL_OPT("stream", &opts.stream),
+		BOOL_OPT("pre-dump-stream", &opts.pre_dump_stream),
 		{ "config", required_argument, 0, 1089 },
 		{ "no-default-config", no_argument, 0, 1090 },
 		{ "tls-cacert", required_argument, 0, 1092 },
@@ -1098,6 +1099,11 @@ int check_options(void)
 			       " in daemon mode\n");
 			return 1;
 		}
+	}
+
+	if (opts.pre_dump_stream && (opts.img_parent != NULL || opts.auto_dedup || opts.use_page_server)) {
+		pr_err("--auto-dedup or incremental dump or page server can not use with --pre-dump-stream");
+		return 1;
 	}
 
 #ifndef CONFIG_GNUTLS

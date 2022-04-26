@@ -26,8 +26,8 @@ struct restore_stats {
 	atomic_t counts[RESTORE_CNT_NR_STATS];
 };
 
-struct dump_stats *dstats;
-struct restore_stats *rstats;
+struct dump_stats *dstats = NULL;
+struct restore_stats *rstats = NULL;
 
 void cnt_add(int c, unsigned long val)
 {
@@ -214,7 +214,7 @@ void write_stats(int what)
 
 int init_stats(int what)
 {
-	if (what == DUMP_STATS) {
+	if (what == DUMP_STATS && dstats == NULL) {
 		/*
 		 * Dumping happens via one process most of the time,
 		 * so we are typically OK with the plain malloc, but
@@ -227,6 +227,9 @@ int init_stats(int what)
 		return dstats ? 0 : -1;
 	}
 
-	rstats = shmalloc(sizeof(struct restore_stats));
-	return rstats ? 0 : -1;
+	if (rstats == NULL) {
+		rstats = shmalloc(sizeof(struct restore_stats));
+		return rstats ? 0 : -1;
+	}
+	return 0;
 }

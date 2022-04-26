@@ -442,10 +442,13 @@ static int userns_openat(void *arg, int dfd, int pid)
 static int do_open_image(struct cr_img *img, int dfd, int type, unsigned long oflags, char *path)
 {
 	int ret, flags;
+	bool is_pages_type;
 
 	flags = oflags & ~(O_NOBUF | O_SERVICE | O_FORCE_LOCAL);
+	is_pages_type = (type == CR_FD_PAGEMAP || type == CR_FD_PAGES || type == CR_FD_SHMEM_PAGEMAP);
 
-	if (opts.stream && !(oflags & O_FORCE_LOCAL)) {
+	// pre_dump_stream only dump pages type image with criu-image-streamer
+	if ((opts.stream && !(oflags & O_FORCE_LOCAL)) || (opts.pre_dump_stream && (oflags & O_DUMP) && is_pages_type)) {
 		ret = img_streamer_open(path, flags);
 		errno = EIO; /* errno value is meaningless, only the ret value is meaningful */
 	} else if (root_ns_mask & CLONE_NEWUSER && type == CR_FD_PAGES && oflags & O_RDWR) {
@@ -574,7 +577,7 @@ int open_image_dir(char *dir, int mode)
 	}
 	fd = ret;
 
-	if (opts.stream) {
+	if (opts.stream || (opts.pre_dump_stream && mode == O_DUMP)) {
 		if (img_streamer_init(dir, mode) < 0)
 			goto err;
 	} else if (opts.img_parent) {
@@ -603,7 +606,7 @@ err:
 
 void close_image_dir(void)
 {
-	if (opts.stream)
+	if (opts.stream || opts.pre_dump_stream)
 		img_streamer_finish();
 	close_service_fd(IMG_FD_OFF);
 }

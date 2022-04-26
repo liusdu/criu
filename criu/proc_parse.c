@@ -985,6 +985,7 @@ int parse_pid_status(pid_t pid, struct seize_task_status *ss, void *data)
 	cr->s.sigpnd = 0;
 	cr->s.shdpnd = 0;
 	cr->s.seccomp_mode = SECCOMP_MODE_DISABLED;
+	cr->s.vpid = -1;
 
 	if (bfdopenr(&f))
 		return -1;
@@ -1015,6 +1016,10 @@ int parse_pid_status(pid_t pid, struct seize_task_status *ss, void *data)
 			/* Get a thread ID in the thread PID namespace. */
 			char *last;
 
+			if (cr->s.vpid != -1) {
+				pr_warn("NSpid item duplicated, ignore parse\n");
+				continue;
+			}
 			last = strrchr(str, '\t');
 			if (!last || sscanf(last, "%d", &cr->s.vpid) != 1) {
 				pr_err("Unable to parse: %s\n", str);

@@ -177,6 +177,7 @@ struct cr_options {
 	int status_fd;
 	bool orphan_pts_master;
 	int stream;
+	int pre_dump_stream;
 	pid_t tree_id;
 	int log_level;
 	char *imgs_dir;

@@ -504,7 +504,11 @@ static int __parasite_dump_pages_seized(struct pstree_item *item, struct parasit
 	 * Step 1 -- generate the pagemap
 	 */
 	args->off = 0;
-	has_parent = !!xfer.parent && !possible_pid_reuse;
+	if (mdc->lazy && !mdc->pre_dump && opts.img_parent) {
+		has_parent = true;
+	} else {
+		has_parent = !!xfer.parent && !possible_pid_reuse;
+	}
 	if (mdc->parent_ie)
 		parent_predump_mode = mdc->parent_ie->pre_dump_mode;
 

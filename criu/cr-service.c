@@ -345,6 +345,8 @@ static int setup_opts_from_req(int sk, CriuOpts *req, int mode)
 		SET_CHAR_OPTS(img_parent, req->parent_img);
 	if (opts.stream)
 		pr_info("using stream mode\n");
+	if (opts.pre_dump_stream)
+		pr_info("using pre_dump_stream mode\n");
 	/*
 	 * Image streaming is not supported with CRIU's service feature as
 	 * the streamer must be started for each dump/restore operation.
@@ -352,7 +354,7 @@ static int setup_opts_from_req(int sk, CriuOpts *req, int mode)
 	 * This explains why we provide the argument mode=-1 instead of
 	 * O_RSTR or O_DUMP.
 	 */
-	if (open_image_dir(images_dir_path, opts.stream ? mode : -1) < 0) {
+	if (open_image_dir(images_dir_path, (opts.stream || opts.pre_dump_stream) ? mode : -1) < 0) {
 		pr_perror("Can't open images directory");
 		goto err;
 	}
@@ -518,13 +520,12 @@ static int setup_opts_from_req(int sk, CriuOpts *req, int mode)
 
 	if (req->ps) {
 		opts.port = (short)req->ps->port;
-
+		if (req->ps->address)
+			SET_CHAR_OPTS(addr, req->ps->address);
+		else
+			opts.addr = NULL;
 		if (!opts.lazy_pages) {
 			opts.use_page_server = true;
-			if (req->ps->address)
-				SET_CHAR_OPTS(addr, req->ps->address);
-			else
-				opts.addr = NULL;
 
 			if (req->ps->has_fd) {
 				if (!opts.swrk_restore)
@@ -860,7 +861,7 @@ static int pre_dump_using_req(int sk, CriuOpts *req)
 	if (pid == 0) {
 		int ret = 1;
 
-		if (setup_opts_from_req(sk, req, -1))
+		if (setup_opts_from_req(sk, req, O_DUMP))
 			goto cout;
 
 		setproctitle("pre-dump --rpc -t %d -D %s", req->pid, images_dir);

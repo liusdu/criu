@@ -904,7 +904,7 @@ int check_parent_local_xfer(int fd_type, unsigned long img_id)
 
 	/* Image streaming lacks support for incremental images */
 	if (opts.stream)
-		return 0;
+	    return 0;
 
 	if (open_parent(get_service_fd(IMG_FD_OFF), &pfd))
 		return -1;
@@ -1411,7 +1411,6 @@ no_server:
 		int count;
 
 		count = write(cfd, &info, sizeof(info));
-		close_safe(&cfd);
 		if (count != sizeof(info)) {
 			pr_perror("Unable to write ps_info");
 			exit(1);

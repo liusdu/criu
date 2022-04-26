@@ -29,8 +29,12 @@ RUN yum install -y \
 	which \
 	e2fsprogs \
 	python3-pip \
-	rpm-build  && \
-	mkdir -p /root/rpmbuild/SPECS && \
+	rpm-build \
+	gnutls-devel \
+	asciidoc \
+	xmlto
+
+RUN	mkdir -p /root/rpmbuild/SPECS && \
 	mkdir -p /root/rpmbuild/SOURCES
 
 
