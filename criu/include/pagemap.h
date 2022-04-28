@@ -81,6 +81,9 @@ struct page_read {
 	int curr_pme;
 
 	struct list_head async;
+
+	// store lazy pages info pointer
+	void *lpi;
 };
 
 /* flags for ->read_pages */

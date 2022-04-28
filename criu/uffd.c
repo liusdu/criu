@@ -671,9 +671,10 @@ static int collect_iovs(struct lazy_pages_info *lpi)
 	struct page_read *pr = &lpi->pr;
 	struct lazy_iov *iov;
 	MmEntry *mm;
-	int nr_pages = 0, n_vma = 0, max_iov_len = 0;
+	int nr_pages = 0, n_vma = 0;
 	int ret = -1;
 	unsigned long start, end, len;
+	unsigned long max_iov_len = 0;
 
 	mm = init_mm_entry(lpi);
 	if (!mm)
@@ -728,6 +729,7 @@ free_mm:
 	return ret;
 }
 
+static int uffd_io_complete_parent(struct page_read *pr, unsigned long vaddr, int *nr);
 static int uffd_io_complete(struct page_read *pr, unsigned long vaddr, int *nr);
 
 static int ud_open(int client, struct lazy_pages_info **_lpi)
@@ -735,6 +737,7 @@ static int ud_open(int client, struct lazy_pages_info **_lpi)
 	struct lazy_pages_info *lpi;
 	int ret = -1;
 	int pr_flags = PR_TASK;
+	struct page_read *cur_parent;
 
 	lpi = lpi_init();
 	if (!lpi)
@@ -770,6 +773,15 @@ static int ud_open(int client, struct lazy_pages_info **_lpi)
 	if (ret <= 0) {
 		lp_err(lpi, "Failed to open pagemap\n");
 		goto out;
+	}
+
+	// let the parent page_read can complete uffd_copy,
+	// and save information about lpi
+	cur_parent = lpi->pr.parent;
+	while (cur_parent) {
+		cur_parent->lpi = (void*)lpi;
+		cur_parent->io_complete = uffd_io_complete_parent;
+		cur_parent = cur_parent->parent;
 	}
 
 	lpi->pr.io_complete = uffd_io_complete;
@@ -865,14 +877,11 @@ static int uffd_copy(struct lazy_pages_info *lpi, __u64 address, int *nr_pages)
 	return 0;
 }
 
-static int uffd_io_complete(struct page_read *pr, unsigned long img_addr, int *nr)
+static int do_uffd_io_complete(struct lazy_pages_info *lpi, struct page_read *pr, unsigned long img_addr, int *nr)
 {
-	struct lazy_pages_info *lpi;
 	unsigned long addr = 0;
 	int req_pages, ret;
 	struct lazy_iov *req;
-
-	lpi = container_of(pr, struct lazy_pages_info, pr);
 
 	/*
 	 * The process may exit while we still have requests in
@@ -918,6 +927,22 @@ static int uffd_io_complete(struct page_read *pr, unsigned long img_addr, int *n
 	 */
 	iov_list_insert(req, &lpi->iovs);
 	return drop_iovs(lpi, addr, *nr * PAGE_SIZE);
+}
+
+static int uffd_io_complete(struct page_read *pr, unsigned long img_addr, int *nr)
+{
+	struct lazy_pages_info *lpi;
+	lpi = container_of(pr, struct lazy_pages_info, pr);
+	return do_uffd_io_complete(lpi, pr, img_addr, nr);
+}
+
+static int uffd_io_complete_parent(struct page_read *pr, unsigned long img_addr, int *nr)
+{
+	struct lazy_pages_info *lpi;
+	lpi = (struct lazy_pages_info *)pr->lpi;
+	if (!lpi)
+		return 0;
+	return do_uffd_io_complete(lpi, pr, img_addr, nr);
 }
 
 static int uffd_zero(struct lazy_pages_info *lpi, __u64 address, int nr_pages)

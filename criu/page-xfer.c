@@ -437,9 +437,14 @@ static int page_xfer_dump_hole(struct page_xfer *xfer, struct iovec *hole, u32 f
 static int get_hole_flags(struct page_pipe *pp, int n)
 {
 	unsigned int hole_flags = pp->hole_flags[n];
+	int flags = PE_PARENT;
 
-	if (hole_flags == PP_HOLE_PARENT)
-		return PE_PARENT;
+	if (hole_flags & PPB_LAZY) {
+		flags |= PE_LAZY;
+	}
+
+	if ((hole_flags & PP_HOLE_PARENT) == PP_HOLE_PARENT)
+		return flags;
 	else
 		BUG();
 
