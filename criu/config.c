@@ -26,6 +26,7 @@
 #include "sockets.h"
 #include "tty.h"
 #include "version.h"
+#include "ghost_remap.h"
 
 #include "common/xmalloc.h"
 
@@ -414,6 +415,7 @@ void init_opts(void)
 	INIT_LIST_HEAD(&opts.ext_mounts);
 	INIT_LIST_HEAD(&opts.inherit_fds);
 	INIT_LIST_HEAD(&opts.external);
+	INIT_LIST_HEAD(&opts.ghost_remap);
 	INIT_LIST_HEAD(&opts.join_ns);
 	INIT_LIST_HEAD(&opts.new_cgroup_roots);
 	INIT_LIST_HEAD(&opts.irmap_scan_paths);
@@ -699,6 +701,7 @@ int parse_options(int argc, char **argv, bool *usage_error, bool *has_exec_cmd, 
 		{ "lsm-mount-context", required_argument, 0, 1099 },
 		{ "network-lock", required_argument, 0, 1100 },
 		{ "max-pipe-num", required_argument, 0, 1101 },
+		{ "ghost-remap", required_argument, 0, 1102 },
 		{},
 	};
 
@@ -1036,6 +1039,12 @@ int parse_options(int argc, char **argv, bool *usage_error, bool *has_exec_cmd, 
 			break;
 		case 1101:
 			opts.max_pipe_num = atoi(optarg);
+			break;
+		case 1102:
+			if (add_ghost_remap(optarg)) {
+				pr_err("Could not add ghost inode when initializing config: %s\n", optarg);
+				return 1;
+			}
 			break;
 		case 'V':
 			pr_msg("Version: %s\n", CRIU_VERSION);

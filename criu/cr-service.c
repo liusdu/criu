@@ -19,6 +19,7 @@
 #include "crtools.h"
 #include "cr_options.h"
 #include "external.h"
+#include "ghost_remap.h"
 #include "util.h"
 #include "criu-log.h"
 #include "cpu.h"

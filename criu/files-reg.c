@@ -3,6 +3,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <libgen.h>
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -53,6 +54,7 @@
 
 #include "files-reg.h"
 #include "plugin.h"
+#include "ghost_remap.h"
 
 int setfsuid(uid_t fsuid);
 int setfsgid(gid_t fsuid);
@@ -892,8 +894,37 @@ static int dump_ghost_remap(char *path, const struct stat *st, int lfd, u32 id, 
 	struct ghost_file *gf;
 	RemapFilePathEntry rpe = REMAP_FILE_PATH_ENTRY__INIT;
 	dev_t phys_dev;
+	u32 remap_id = 0;
+	char *remap_path = NULL;
 
 	pr_info("Dumping ghost file for fd %d id %#x\n", lfd, id);
+	remap_path = ghost_remap_lookup_id(st->st_ino);
+
+	if (remap_path) {
+		FileEntry fe = FILE_ENTRY__INIT;
+		RegFileEntry rfe = REG_FILE_ENTRY__INIT;
+		FownEntry fwn = FOWN_ENTRY__INIT;
+		int ret;
+		u32 idp;
+		if (note_link_remap(remap_path, nsid))
+			return -1;
+		fd_id_generate_special(NULL, &idp);
+		rfe.id = idp;
+		rfe.flags = 0;
+		rfe.pos = 0;
+		rfe.fown = &fwn;
+		rfe.name = remap_path;
+
+		fe.type = FD_TYPES__REG;
+		fe.id = idp;
+		fe.reg = &rfe;
+		remap_id = idp;
+		rpe.remap_type = REMAP_TYPE__LINKED;
+
+		ret = pb_write_one(img_from_set(glob_imgset, CR_FD_FILES), &fe, PB_FILE);
+		if (!ret)
+			goto dump_entry;
+	}
 
 	if (st->st_size > opts.ghost_limit) {
 		pr_err("Can't dump ghost file %s of %" PRIu64 " size, increase limit\n", path, st->st_size);
@@ -912,6 +943,8 @@ static int dump_ghost_remap(char *path, const struct stat *st, int lfd, u32 id, 
 	gf->dev = phys_dev;
 	gf->ino = st->st_ino;
 	gf->id = ghost_file_ids++;
+	remap_id = gf->id;
+	rpe.remap_type = REMAP_TYPE__GHOST;
 
 	if (dump_ghost_file(lfd, gf->id, st, phys_dev)) {
 		xfree(gf);
@@ -922,9 +955,8 @@ static int dump_ghost_remap(char *path, const struct stat *st, int lfd, u32 id, 
 
 dump_entry:
 	rpe.orig_id = id;
-	rpe.remap_id = gf->id;
+	rpe.remap_id = remap_id;
 	rpe.has_remap_type = true;
-	rpe.remap_type = REMAP_TYPE__GHOST;
 
 	return pb_write_one(img_from_set(glob_imgset, CR_FD_REMAP_FPATH), &rpe, PB_REMAP_FPATH);
 }
